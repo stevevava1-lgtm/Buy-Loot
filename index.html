@@ -220,6 +220,11 @@
         <div class="price">$600.00</div>
         <button type="button" class="btn btn-primary" id="btn-barracuda">花費 $600 購買</button>
       </div>
+      <div class="shop-item" style="margin-top:1rem;">
+        <h3>pokeball skin!</h3>
+        <div class="price">$50.00</div>
+        <button type="button" class="btn btn-primary" id="btn-pokeball-skin">花費 $50 購買</button>
+      </div>
     </div>
     <div id="panel-pve" class="card hidden" role="tabpanel">
       <h2 style="margin:0 0 1rem; font-size:1rem;">Plants vs Everything 特賣</h2>
@@ -264,6 +269,17 @@
       <p class="highlight" style="color:var(--accent);">Overpowered_Barracuda</p>
       <div class="btn-row">
         <button type="button" class="btn btn-primary" id="modal-barracuda-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay-pokeball-skin" class="overlay hidden">
+    <div class="modal">
+      <h2>購買成功</h2>
+      <p>請前往 <strong>Fishing World</strong>，在遊戲內兌換以下代碼以套用精靈球造型：</p>
+      <p class="highlight" style="color:var(--accent);">prereleasepokemon!!!</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-pokeball-skin-ok">我知道了</button>
       </div>
     </div>
   </div>
@@ -323,6 +339,7 @@
   <script>
     const STORAGE_KEY = "crossGameShopProfiles_v1";
     const BARRACUDA_PRICE = 600;
+    const POKEBALL_SKIN_PRICE = 50;
     const RAVEN_PRICE = 100;
 
     function loadAll() {
@@ -403,6 +420,7 @@
       panelPve: document.getElementById("panel-pve"),
       panelStocks: document.getElementById("panel-stocks"),
       btnBarracuda: document.getElementById("btn-barracuda"),
+      btnPokeballSkin: document.getElementById("btn-pokeball-skin"),
       btnRaven: document.getElementById("btn-raven"),
       stockCurrent: document.getElementById("stock-current"),
       stockShares: document.getElementById("stock-shares"),
@@ -416,6 +434,8 @@
       modalGenericOk: document.getElementById("modal-generic-ok"),
       overlayBarracuda: document.getElementById("overlay-barracuda"),
       modalBarracudaOk: document.getElementById("modal-barracuda-ok"),
+      overlayPokeballSkin: document.getElementById("overlay-pokeball-skin"),
+      modalPokeballSkinOk: document.getElementById("modal-pokeball-skin-ok"),
       overlayRaven: document.getElementById("overlay-raven"),
       modalRavenOk: document.getElementById("modal-raven-ok"),
       overlaySettings: document.getElementById("overlay-settings"),
@@ -577,6 +597,11 @@
       els.btnBarracuda.textContent = canBuy
         ? `花費 ${formatMoney(BARRACUDA_PRICE)} 購買`
         : `餘額不足（需 ${formatMoney(BARRACUDA_PRICE)}）`;
+      const canPokeball = p.balance >= POKEBALL_SKIN_PRICE;
+      els.btnPokeballSkin.disabled = !canPokeball;
+      els.btnPokeballSkin.textContent = canPokeball
+        ? `花費 ${formatMoney(POKEBALL_SKIN_PRICE)} 購買`
+        : `餘額不足（需 ${formatMoney(POKEBALL_SKIN_PRICE)}）`;
       const ravenDone = p.ravenPurchased === true;
       const canRaven = !ravenDone && p.balance >= RAVEN_PRICE;
       els.btnRaven.disabled = !canRaven;
@@ -671,6 +696,18 @@
       els.overlayBarracuda.classList.remove("hidden");
     });
 
+    els.btnPokeballSkin.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p || p.balance < POKEBALL_SKIN_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(POKEBALL_SKIN_PRICE)}。`);
+        return;
+      }
+      p.balance = roundMoney(p.balance - POKEBALL_SKIN_PRICE);
+      persistProfile(p);
+      refreshUI();
+      els.overlayPokeballSkin.classList.remove("hidden");
+    });
+
     els.btnRaven.addEventListener("click", () => {
       const p = getProfile();
       if (!p) return;
@@ -718,6 +755,10 @@
 
     els.modalBarracudaOk.addEventListener("click", () => {
       els.overlayBarracuda.classList.add("hidden");
+    });
+
+    els.modalPokeballSkinOk.addEventListener("click", () => {
+      els.overlayPokeballSkin.classList.add("hidden");
     });
 
     els.modalRavenOk.addEventListener("click", () => {
@@ -822,6 +863,9 @@
     });
     document.getElementById("overlay-barracuda").addEventListener("click", (e) => {
       if (e.target.id === "overlay-barracuda") els.overlayBarracuda.classList.add("hidden");
+    });
+    document.getElementById("overlay-pokeball-skin").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-pokeball-skin") els.overlayPokeballSkin.classList.add("hidden");
     });
     document.getElementById("overlay-raven").addEventListener("click", (e) => {
       if (e.target.id === "overlay-raven") els.overlayRaven.classList.add("hidden");
