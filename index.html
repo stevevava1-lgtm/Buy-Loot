@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>跨遊戲特賣商店</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --accent: #3d9eff;
+      --accent-dim: #2563b8;
+      --text: #e8eef5;
+      --muted: #8b9cb3;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --radius: 12px;
+      --font: "Segoe UI", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, #1e3a5f 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+    .hidden { display: none !important; }
+    #app { min-height: 100vh; padding: 1.25rem; padding-bottom: 5rem; max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.25rem; letter-spacing: 0.02em; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--surface2);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent-dim); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.08s, filter 0.15s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: linear-gradient(180deg, var(--accent), var(--accent-dim)); color: #fff; }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid #3d4f66; }
+    .btn-secondary:hover { background: #2d3d52; }
+    .btn-danger { background: #7f1d1d; color: #fecaca; }
+    .btn-danger:hover { filter: brightness(1.1); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+    .error { color: var(--danger); font-size: 0.85rem; margin-top: -0.5rem; margin-bottom: 0.75rem; }
+    .tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .tab:hover { color: var(--text); background: var(--surface2); }
+    .tab.active { color: #fff; background: var(--surface2); border-color: var(--accent); }
+    .balance-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .balance { font-size: 1.25rem; font-weight: 700; color: var(--success); }
+    .user-tag { color: var(--muted); font-size: 0.85rem; }
+    .shop-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 10px;
+      border: 1px solid var(--surface2);
+    }
+    .shop-item h3 { margin: 0; font-size: 1rem; }
+    .shop-item .price { color: var(--warning); font-weight: 700; }
+    .stock-panel .current {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 0.25rem 0 0.75rem;
+    }
+    .history {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .history li {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--surface2);
+      font-size: 0.9rem;
+    }
+    .history li:last-child { border-bottom: none; }
+    .history .time { color: var(--muted); }
+    .history .chg { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .history .chg-up { color: var(--success); }
+    .history .chg-down { color: var(--danger); }
+    .history .chg-flat { color: var(--muted); }
+    .stock-actions { margin: 0.75rem 0 1rem; }
+    .stock-meta { color: var(--muted); font-size: 0.88rem; margin: 0.35rem 0 0.5rem; }
+    .settings-fab {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1.35rem;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .settings-fab:hover { background: var(--surface2); }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: var(--radius);
+      padding: 1.35rem;
+      max-width: 420px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+    .modal p { margin: 0 0 1rem; line-height: 1.55; color: var(--muted); font-size: 0.92rem; }
+    .modal .highlight { color: var(--accent); font-weight: 700; word-break: break-all; }
+    .placeholder { color: var(--muted); font-style: italic; padding: 1rem 0; }
+  </style>
+</head>
+<body>
+  <div id="screen-auth" class="card" style="max-width: 400px; margin: 2rem auto;">
+    <h1>帳號登入</h1>
+    <p class="subtitle">建立新帳號或登入；皆需設定／輸入密碼。</p>
+    <label for="auth-name">使用者名稱</label>
+    <input type="text" id="auth-name" autocomplete="username" />
+    <label for="auth-pass">密碼</label>
+    <input type="password" id="auth-pass" autocomplete="current-password" />
+    <div id="auth-error" class="error hidden"></div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btn-create">建立帳號</button>
+      <button type="button" class="btn btn-secondary" id="btn-login">登入</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="balance-bar">
+      <div>
+        <span class="user-tag" id="display-user"></span>
+        <div class="balance">餘額：<span id="display-balance">$1.00</span></div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="fishing" role="tab">Fishing World</button>
+      <button type="button" class="tab" data-tab="pve" role="tab">Plants vs Everything</button>
+      <button type="button" class="tab" data-tab="stocks" role="tab">Stocks</button>
+    </div>
+    <div id="panel-fishing" class="card" role="tabpanel">
+      <h2 style="margin:0 0 1rem; font-size:1rem;">Fishing World 特賣</h2>
+      <div class="shop-item">
+        <h3>2k value barracuda with limited hacked mutation</h3>
+        <div class="price">$600.00</div>
+        <button type="button" class="btn btn-primary" id="btn-barracuda">花費 $600 購買</button>
+      </div>
+    </div>
+    <div id="panel-pve" class="card hidden" role="tabpanel">
+      <h2 style="margin:0 0 1rem; font-size:1rem;">Plants vs Everything 特賣</h2>
+      <div class="shop-item">
+        <h3>Limited addition Raven</h3>
+        <p class="subtitle" style="margin:0 0 0.5rem; font-size:0.82rem; line-height:1.45; color:var(--warning);">稀有聯動限定寵物；本賣場項目將於近期移除，敬請把握。</p>
+        <div class="price">$100.00</div>
+        <button type="button" class="btn btn-primary" id="btn-raven">花費 $100 購買</button>
+      </div>
+    </div>
+    <div id="panel-stocks" class="card hidden stock-panel" role="tabpanel">
+      <h2 style="margin:0; font-size:1rem;">股票模擬</h2>
+      <p class="subtitle" style="margin-bottom:0.5rem;">股價每分鐘自動重抽，範圍 <strong>$0.10～$500.00</strong>（含小數）；<strong>新帳戶第一分鐘股價固定為 $1.00</strong>，之後每分鐘改為隨機。現金從 $1.00 起。請在<strong>您決定的時機</strong>按下方按鈕以<strong>當時股價</strong>買入或賣出 1 股。分頁在背景時瀏覽器可能延遲計時，但<strong>只要本頁仍開著</strong>，下次同步時會依時間<strong>自動補算</strong>應發生的分鐘跳動；關閉分頁後時間會暫停，重新開啟並登入後會接續補算。進度會寫入本機，重新整理或關閉後再開仍可從存檔還原。</p>
+      <div class="current" id="stock-current">$1.00</div>
+      <p class="stock-meta">持有股數：<strong id="stock-shares" style="color:var(--text);">0</strong> 股</p>
+      <div class="btn-row stock-actions">
+        <button type="button" class="btn btn-primary" id="btn-buy-stock">買入股票（1 股）</button>
+        <button type="button" class="btn btn-secondary" id="btn-sell-stock">賣出股票（1 股）</button>
+      </div>
+      <h3 style="margin:0 0 0.35rem; font-size:0.9rem; color:var(--muted);">最近 5 分鐘：價格與每次漲跌</h3>
+      <p class="subtitle" style="margin-top:0; font-size:0.8rem;">下列為每分鐘收盤價，以及相對於<strong>上一分鐘</strong>的變化（Δ）。</p>
+      <ul class="history" id="stock-history" aria-label="股價與漲跌紀錄"></ul>
+    </div>
+  </div>
+
+  <button type="button" class="settings-fab hidden" id="btn-settings" title="設定" aria-label="設定">⚙</button>
+
+  <div id="overlay-generic" class="overlay hidden">
+    <div class="modal">
+      <h2 id="modal-generic-title"></h2>
+      <p id="modal-generic-body"></p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-generic-ok">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay-barracuda" class="overlay hidden">
+    <div class="modal">
+      <h2>購買成功</h2>
+      <p>請前往 <strong>Fishing World</strong>，在遊戲內輸入以下代碼：</p>
+      <p class="highlight" style="color:var(--accent);">Overpowered_Barracuda</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-barracuda-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay-raven" class="overlay hidden">
+    <div class="modal">
+      <h2>購買成功</h2>
+      <p>請前往 <strong>Plants vs Everything</strong>，在遊戲內輸入以下代碼：</p>
+      <p class="highlight" style="color:var(--accent);">R4v3np31t</p>
+      <p style="margin:0.85rem 0 0; font-weight:800; color:var(--warning); letter-spacing:0.02em;">Only can be redeemed once!!!</p>
+      <p class="subtitle" style="margin:0.75rem 0 0; font-size:0.88rem;">稀有聯動限定寵物，本賣場項目即將下架，請盡快於遊戲內完成兌換。</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-raven-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay-settings" class="overlay hidden">
+    <div class="modal">
+      <h2>設定</h2>
+      <div class="btn-row" style="flex-direction:column; align-items:stretch;">
+        <button type="button" class="btn btn-secondary" id="btn-change-pass-open">變更密碼</button>
+        <button type="button" class="btn btn-danger" id="btn-logout">登出</button>
+        <button type="button" class="btn btn-secondary" id="btn-settings-close">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay-password" class="overlay hidden">
+    <div class="modal">
+      <h2>變更密碼</h2>
+      <label for="pass-old">目前密碼</label>
+      <input type="password" id="pass-old" autocomplete="current-password" />
+      <label for="pass-new">新密碼</label>
+      <input type="password" id="pass-new" autocomplete="new-password" />
+      <label for="pass-new2">確認新密碼</label>
+      <input type="password" id="pass-new2" autocomplete="new-password" />
+      <div id="pass-error" class="error hidden"></div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="btn-pass-submit">確認變更</button>
+        <button type="button" class="btn btn-secondary" id="btn-pass-cancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay-warning" class="overlay hidden">
+    <div class="modal">
+      <h2>重要提醒</h2>
+      <p>您確定記得新密碼嗎？若忘記密碼，此帳號／存檔可能<strong style="color:var(--warning);">永久無法找回</strong>。</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-danger" id="btn-warning-confirm">我確定，繼續變更</button>
+        <button type="button" class="btn btn-secondary" id="btn-warning-cancel">先不要</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "crossGameShopProfiles_v1";
+    const BARRACUDA_PRICE = 600;
+    const RAVEN_PRICE = 100;
+
+    function loadAll() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveAll(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    async function hashPassword(password, salt) {
+      const enc = new TextEncoder();
+      const data = enc.encode(password + "::" + salt);
+      const buf = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    function randomSalt() {
+      const a = new Uint8Array(16);
+      crypto.getRandomValues(a);
+      return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function roundMoney(n) {
+      return Math.round(n * 100) / 100;
+    }
+
+    function randomStockPrice() {
+      const min = 0.1;
+      const max = 500;
+      const v = min + Math.random() * (max - min);
+      return roundMoney(v);
+    }
+
+    function formatMoney(n) {
+      return "$" + Number(n).toFixed(2);
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function defaultProfile(name, passwordHash, salt) {
+      const t = nowIso();
+      return {
+        name,
+        passwordHash,
+        salt,
+        balance: 1,
+        stockPrice: 1,
+        stockShares: 0,
+        stockHistory: [{ time: t, price: 1, change: 0 }],
+        barracudaPurchased: false,
+        ravenPurchased: false,
+        lastStockTick: t,
+      };
+    }
+
+    const els = {
+      screenAuth: document.getElementById("screen-auth"),
+      app: document.getElementById("app"),
+      authName: document.getElementById("auth-name"),
+      authPass: document.getElementById("auth-pass"),
+      authError: document.getElementById("auth-error"),
+      btnCreate: document.getElementById("btn-create"),
+      btnLogin: document.getElementById("btn-login"),
+      displayUser: document.getElementById("display-user"),
+      displayBalance: document.getElementById("display-balance"),
+      tabs: document.querySelectorAll(".tab"),
+      panelFishing: document.getElementById("panel-fishing"),
+      panelPve: document.getElementById("panel-pve"),
+      panelStocks: document.getElementById("panel-stocks"),
+      btnBarracuda: document.getElementById("btn-barracuda"),
+      btnRaven: document.getElementById("btn-raven"),
+      stockCurrent: document.getElementById("stock-current"),
+      stockShares: document.getElementById("stock-shares"),
+      stockHistory: document.getElementById("stock-history"),
+      btnBuyStock: document.getElementById("btn-buy-stock"),
+      btnSellStock: document.getElementById("btn-sell-stock"),
+      btnSettings: document.getElementById("btn-settings"),
+      overlayGeneric: document.getElementById("overlay-generic"),
+      modalGenericTitle: document.getElementById("modal-generic-title"),
+      modalGenericBody: document.getElementById("modal-generic-body"),
+      modalGenericOk: document.getElementById("modal-generic-ok"),
+      overlayBarracuda: document.getElementById("overlay-barracuda"),
+      modalBarracudaOk: document.getElementById("modal-barracuda-ok"),
+      overlayRaven: document.getElementById("overlay-raven"),
+      modalRavenOk: document.getElementById("modal-raven-ok"),
+      overlaySettings: document.getElementById("overlay-settings"),
+      btnChangePassOpen: document.getElementById("btn-change-pass-open"),
+      btnLogout: document.getElementById("btn-logout"),
+      btnSettingsClose: document.getElementById("btn-settings-close"),
+      overlayPassword: document.getElementById("overlay-password"),
+      passOld: document.getElementById("pass-old"),
+      passNew: document.getElementById("pass-new"),
+      passNew2: document.getElementById("pass-new2"),
+      passError: document.getElementById("pass-error"),
+      btnPassSubmit: document.getElementById("btn-pass-submit"),
+      btnPassCancel: document.getElementById("btn-pass-cancel"),
+      overlayWarning: document.getElementById("overlay-warning"),
+      btnWarningConfirm: document.getElementById("btn-warning-confirm"),
+      btnWarningCancel: document.getElementById("btn-warning-cancel"),
+    };
+
+    let currentName = null;
+    let stockTimer = null;
+    let pendingNewPassword = null;
+    let pendingOldPassword = null;
+
+    function ensureProfileShape(p) {
+      if (typeof p.balance !== "number" || isNaN(p.balance)) p.balance = 1;
+      if (typeof p.stockPrice !== "number" || isNaN(p.stockPrice)) p.stockPrice = 1;
+      if (typeof p.stockShares !== "number" || isNaN(p.stockShares) || p.stockShares < 0) p.stockShares = 0;
+      p.stockShares = Math.max(0, Math.floor(p.stockShares));
+      if (!p.lastStockTick) p.lastStockTick = nowIso();
+      if (!Array.isArray(p.stockHistory) || p.stockHistory.length === 0) {
+        p.stockHistory = [{ time: p.lastStockTick || nowIso(), price: p.stockPrice, change: 0 }];
+      }
+      for (let i = 0; i < p.stockHistory.length; i++) {
+        const row = p.stockHistory[i];
+        if (typeof row.change !== "number" || isNaN(row.change)) {
+          if (i === 0) row.change = 0;
+          else row.change = roundMoney(row.price - p.stockHistory[i - 1].price);
+        }
+      }
+      p.stockHistory = trimHistory(p.stockHistory, 5);
+      if (typeof p.ravenPurchased !== "boolean") p.ravenPurchased = false;
+      return p;
+    }
+
+    function showAuthError(msg) {
+      els.authError.textContent = msg;
+      els.authError.classList.remove("hidden");
+    }
+
+    function clearAuthError() {
+      els.authError.classList.add("hidden");
+      els.authError.textContent = "";
+    }
+
+    function showModal(title, body) {
+      els.modalGenericTitle.textContent = title;
+      els.modalGenericBody.textContent = body;
+      els.overlayGeneric.classList.remove("hidden");
+    }
+
+    function getProfile() {
+      if (!currentName) return null;
+      const all = loadAll();
+      const p = all[currentName];
+      if (!p) return null;
+      ensureProfileShape(p);
+      saveAll(all);
+      return p;
+    }
+
+    function persistProfile(profile) {
+      const all = loadAll();
+      all[currentName] = profile;
+      saveAll(all);
+    }
+
+    function trimHistory(hist, max = 5) {
+      if (hist.length <= max) return hist;
+      return hist.slice(-max);
+    }
+
+    /** 推進股價一次；tickTimeIso 為該分鐘紀錄用的時間戳（補算時對齊分鐘）。 */
+    function applyOneStockTick(profile, tickTimeIso) {
+      const oldPrice = profile.stockPrice;
+      profile.stockPrice = randomStockPrice();
+      const change = roundMoney(profile.stockPrice - oldPrice);
+      profile.stockHistory.push({ time: tickTimeIso, price: profile.stockPrice, change });
+      profile.stockHistory = trimHistory(profile.stockHistory, 5);
+    }
+
+    /**
+     * 依 lastStockTick 與現在時間補齊所有應發生的分鐘跳動（分頁在背景或計時器延遲時仍正確）。
+     * 關閉分頁後不會執行；再次開啟並登入後會一次補算。
+     */
+    function catchUpStockTicks(profile) {
+      const interval = 60 * 1000;
+      let t = new Date(profile.lastStockTick).getTime();
+      if (Number.isNaN(t)) t = Date.now();
+      const now = Date.now();
+      let n = 0;
+      const maxSteps = 60 * 24 * 14;
+      while (now - t >= interval && n < maxSteps) {
+        t += interval;
+        applyOneStockTick(profile, new Date(t).toISOString());
+        n++;
+      }
+      profile.lastStockTick = new Date(t).toISOString();
+    }
+
+    function syncStockSimulation() {
+      if (!currentName) return;
+      const p = getProfile();
+      if (!p) return;
+      catchUpStockTicks(p);
+      persistProfile(p);
+      refreshUI();
+    }
+
+    function startStockTimer() {
+      if (stockTimer) clearInterval(stockTimer);
+      stockTimer = setInterval(() => syncStockSimulation(), 60 * 1000);
+    }
+
+    function stopStockTimer() {
+      if (stockTimer) {
+        clearInterval(stockTimer);
+        stockTimer = null;
+      }
+    }
+
+    function formatChange(chg) {
+      if (chg > 0) return "+" + formatMoney(chg);
+      if (chg < 0) return "-" + formatMoney(Math.abs(chg));
+      return formatMoney(0);
+    }
+
+    function refreshUI() {
+      const p = getProfile();
+      if (!p) return;
+      els.displayUser.textContent = "已登入：" + p.name;
+      els.displayBalance.textContent = formatMoney(p.balance);
+      els.stockCurrent.textContent = formatMoney(p.stockPrice);
+      if (els.stockShares) els.stockShares.textContent = String(p.stockShares);
+      els.stockHistory.innerHTML = "";
+      const hist = [...p.stockHistory].reverse();
+      hist.forEach((row) => {
+        const li = document.createElement("li");
+        const d = new Date(row.time);
+        const timeStr = d.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const chg = typeof row.change === "number" ? row.change : 0;
+        let chgClass = "chg-flat";
+        if (chg > 0) chgClass = "chg-up";
+        else if (chg < 0) chgClass = "chg-down";
+        li.innerHTML = `<span class="time">${timeStr}</span><span class="chg ${chgClass}">Δ ${formatChange(chg)}</span><span>${formatMoney(row.price)}</span>`;
+        els.stockHistory.appendChild(li);
+      });
+      const canBuy = p.balance >= BARRACUDA_PRICE;
+      els.btnBarracuda.disabled = !canBuy;
+      els.btnBarracuda.textContent = canBuy
+        ? `花費 ${formatMoney(BARRACUDA_PRICE)} 購買`
+        : `餘額不足（需 ${formatMoney(BARRACUDA_PRICE)}）`;
+      const ravenDone = p.ravenPurchased === true;
+      const canRaven = !ravenDone && p.balance >= RAVEN_PRICE;
+      els.btnRaven.disabled = !canRaven;
+      if (ravenDone) els.btnRaven.textContent = "已兌換（每帳僅一次）";
+      else if (p.balance < RAVEN_PRICE)
+        els.btnRaven.textContent = `餘額不足（需 ${formatMoney(RAVEN_PRICE)}）`;
+      else els.btnRaven.textContent = `花費 ${formatMoney(RAVEN_PRICE)} 購買`;
+      const px = p.stockPrice;
+      const canBuyShare = p.balance >= px && px > 0;
+      if (els.btnBuyStock) {
+        els.btnBuyStock.disabled = !canBuyShare;
+        els.btnBuyStock.textContent = `買入 1 股（${formatMoney(px)}）`;
+      }
+      if (els.btnSellStock) {
+        const canSell = p.stockShares >= 1;
+        els.btnSellStock.disabled = !canSell;
+        els.btnSellStock.textContent = `賣出 1 股（${formatMoney(px)}）`;
+      }
+    }
+
+    function showApp() {
+      els.screenAuth.classList.add("hidden");
+      els.app.classList.remove("hidden");
+      els.btnSettings.classList.remove("hidden");
+      syncStockSimulation();
+      startStockTimer();
+    }
+
+    function showAuth() {
+      stopStockTimer();
+      currentName = null;
+      els.app.classList.add("hidden");
+      els.screenAuth.classList.remove("hidden");
+      els.btnSettings.classList.add("hidden");
+      els.authName.value = "";
+      els.authPass.value = "";
+      clearAuthError();
+    }
+
+    function switchTab(id) {
+      els.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === id));
+      els.panelFishing.classList.toggle("hidden", id !== "fishing");
+      els.panelPve.classList.toggle("hidden", id !== "pve");
+      els.panelStocks.classList.toggle("hidden", id !== "stocks");
+    }
+
+    els.tabs.forEach((t) => {
+      t.addEventListener("click", () => switchTab(t.dataset.tab));
+    });
+
+    els.btnCreate.addEventListener("click", async () => {
+      clearAuthError();
+      const name = els.authName.value.trim();
+      const pass = els.authPass.value;
+      if (!name) return showAuthError("請輸入使用者名稱。");
+      if (!pass) return showAuthError("請設定密碼。");
+      const all = loadAll();
+      if (all[name]) return showAuthError("此名稱已存在，請改用「登入」或換名稱。");
+      const salt = randomSalt();
+      const passwordHash = await hashPassword(pass, salt);
+      all[name] = defaultProfile(name, passwordHash, salt);
+      saveAll(all);
+      currentName = name;
+      showApp();
+    });
+
+    els.btnLogin.addEventListener("click", async () => {
+      clearAuthError();
+      const name = els.authName.value.trim();
+      const pass = els.authPass.value;
+      if (!name) return showAuthError("請輸入使用者名稱。");
+      if (!pass) return showAuthError("請輸入密碼。");
+      const all = loadAll();
+      const p = all[name];
+      if (!p) return showAuthError("找不到此帳號。");
+      const h = await hashPassword(pass, p.salt);
+      if (h !== p.passwordHash) return showAuthError("密碼錯誤。");
+      currentName = name;
+      showApp();
+    });
+
+    els.btnBarracuda.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p || p.balance < BARRACUDA_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(BARRACUDA_PRICE)}。`);
+        return;
+      }
+      p.balance = roundMoney(p.balance - BARRACUDA_PRICE);
+      p.barracudaPurchased = true;
+      persistProfile(p);
+      refreshUI();
+      els.overlayBarracuda.classList.remove("hidden");
+    });
+
+    els.btnRaven.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p) return;
+      if (p.ravenPurchased) {
+        showModal("無法購買", "Limited addition Raven 每個帳號僅能兌換一次。");
+        return;
+      }
+      if (p.balance < RAVEN_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(RAVEN_PRICE)}。`);
+        return;
+      }
+      p.balance = roundMoney(p.balance - RAVEN_PRICE);
+      p.ravenPurchased = true;
+      persistProfile(p);
+      refreshUI();
+      els.overlayRaven.classList.remove("hidden");
+    });
+
+    els.btnBuyStock.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p) return;
+      const px = p.stockPrice;
+      if (p.balance < px) {
+        showModal("無法買入", `現金不足，買 1 股需要 ${formatMoney(px)}。`);
+        return;
+      }
+      p.balance = roundMoney(p.balance - px);
+      p.stockShares = Math.max(0, Math.floor(p.stockShares || 0)) + 1;
+      persistProfile(p);
+      refreshUI();
+    });
+
+    els.btnSellStock.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p || p.stockShares < 1) {
+        showModal("無法賣出", "您沒有足夠股數。");
+        return;
+      }
+      const px = p.stockPrice;
+      p.stockShares = Math.max(0, Math.floor(p.stockShares || 0) - 1);
+      p.balance = roundMoney(p.balance + px);
+      persistProfile(p);
+      refreshUI();
+    });
+
+    els.modalBarracudaOk.addEventListener("click", () => {
+      els.overlayBarracuda.classList.add("hidden");
+    });
+
+    els.modalRavenOk.addEventListener("click", () => {
+      els.overlayRaven.classList.add("hidden");
+    });
+
+    els.modalGenericOk.addEventListener("click", () => {
+      els.overlayGeneric.classList.add("hidden");
+    });
+
+    els.btnSettings.addEventListener("click", () => {
+      els.overlaySettings.classList.remove("hidden");
+    });
+
+    els.btnSettingsClose.addEventListener("click", () => {
+      els.overlaySettings.classList.add("hidden");
+    });
+
+    els.btnLogout.addEventListener("click", () => {
+      els.overlaySettings.classList.add("hidden");
+      showAuth();
+    });
+
+    els.btnChangePassOpen.addEventListener("click", () => {
+      els.overlaySettings.classList.add("hidden");
+      els.passOld.value = "";
+      els.passNew.value = "";
+      els.passNew2.value = "";
+      els.passError.classList.add("hidden");
+      els.overlayPassword.classList.remove("hidden");
+    });
+
+    els.btnPassCancel.addEventListener("click", () => {
+      els.overlayPassword.classList.add("hidden");
+      pendingNewPassword = null;
+      pendingOldPassword = null;
+    });
+
+    els.btnPassSubmit.addEventListener("click", () => {
+      els.passError.classList.add("hidden");
+      const oldP = els.passOld.value;
+      const n1 = els.passNew.value;
+      const n2 = els.passNew2.value;
+      if (!oldP || !n1 || !n2) {
+        els.passError.textContent = "請填寫所有欄位。";
+        els.passError.classList.remove("hidden");
+        return;
+      }
+      if (n1 !== n2) {
+        els.passError.textContent = "兩次新密碼不一致。";
+        els.passError.classList.remove("hidden");
+        return;
+      }
+      pendingOldPassword = oldP;
+      pendingNewPassword = n1;
+      els.overlayPassword.classList.add("hidden");
+      els.overlayWarning.classList.remove("hidden");
+    });
+
+    els.btnWarningCancel.addEventListener("click", () => {
+      els.overlayWarning.classList.add("hidden");
+      pendingNewPassword = null;
+      pendingOldPassword = null;
+    });
+
+    els.btnWarningConfirm.addEventListener("click", async () => {
+      const newPass = pendingNewPassword;
+      const oldP = pendingOldPassword;
+      els.overlayWarning.classList.add("hidden");
+      pendingNewPassword = null;
+      pendingOldPassword = null;
+      if (!newPass || !oldP || !currentName) return;
+      const p = getProfile();
+      if (!p) return;
+      const hOld = await hashPassword(oldP, p.salt);
+      if (hOld !== p.passwordHash) {
+        showModal("變更失敗", "目前密碼不正確。");
+        return;
+      }
+      const salt = randomSalt();
+      p.salt = salt;
+      p.passwordHash = await hashPassword(newPass, salt);
+      persistProfile(p);
+      showModal("已更新", "密碼已變更，請記好新密碼。");
+    });
+
+    document.getElementById("overlay-settings").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-settings") els.overlaySettings.classList.add("hidden");
+    });
+    document.getElementById("overlay-password").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-password") els.overlayPassword.classList.add("hidden");
+    });
+    document.getElementById("overlay-warning").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-warning") {
+        els.overlayWarning.classList.add("hidden");
+        pendingNewPassword = null;
+        pendingOldPassword = null;
+      }
+    });
+    document.getElementById("overlay-generic").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-generic") els.overlayGeneric.classList.add("hidden");
+    });
+    document.getElementById("overlay-barracuda").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-barracuda") els.overlayBarracuda.classList.add("hidden");
+    });
+    document.getElementById("overlay-raven").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-raven") els.overlayRaven.classList.add("hidden");
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && currentName) syncStockSimulation();
+    });
+
+    window.addEventListener("pageshow", (e) => {
+      if (e.persisted && currentName) syncStockSimulation();
+    });
+
+  </script>
+</body>
+</html>
