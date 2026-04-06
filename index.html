@@ -229,10 +229,10 @@
     <div id="panel-pve" class="card hidden" role="tabpanel">
       <h2 style="margin:0 0 1rem; font-size:1rem;">Plants vs Everything 特賣</h2>
       <div class="shop-item">
-        <h3>Limited addition Raven</h3>
-        <p class="subtitle" style="margin:0 0 0.5rem; font-size:0.82rem; line-height:1.45; color:var(--warning);">稀有聯動限定寵物；本賣場項目將於近期移除，敬請把握。</p>
-        <div class="price">$100.00</div>
-        <button type="button" class="btn btn-primary" id="btn-raven">花費 $100 購買</button>
+        <h3>Free Pineapple</h3>
+        <p class="subtitle" style="margin:0 0 0.5rem; font-size:0.82rem; line-height:1.45; color:var(--muted);">常駐商品，賣場長期販售（非期間限定下架）。</p>
+        <div class="price">$300.00</div>
+        <button type="button" class="btn btn-primary" id="btn-pineapple">花費 $300 購買</button>
       </div>
     </div>
     <div id="panel-stocks" class="card hidden stock-panel" role="tabpanel">
@@ -284,15 +284,13 @@
     </div>
   </div>
 
-  <div id="overlay-raven" class="overlay hidden">
+  <div id="overlay-pineapple" class="overlay hidden">
     <div class="modal">
       <h2>購買成功</h2>
-      <p>請前往 <strong>Plants vs Everything</strong>，在遊戲內輸入以下代碼：</p>
-      <p class="highlight" style="color:var(--accent);">R4v3np31t</p>
-      <p style="margin:0.85rem 0 0; font-weight:800; color:var(--warning); letter-spacing:0.02em;">Only can be redeemed once!!!</p>
-      <p class="subtitle" style="margin:0.75rem 0 0; font-size:0.88rem;">稀有聯動限定寵物，本賣場項目即將下架，請盡快於遊戲內完成兌換。</p>
+      <p>請在 <strong>Plants vs Everything</strong> 遊戲內使用以下兌換說明：</p>
+      <p style="margin:0.75rem 0 0; line-height:1.55; font-size:0.95rem;">Redeem code: <span class="highlight" style="color:var(--accent);">HXO1</span> for a free pineapple.</p>
       <div class="btn-row">
-        <button type="button" class="btn btn-primary" id="modal-raven-ok">我知道了</button>
+        <button type="button" class="btn btn-primary" id="modal-pineapple-ok">我知道了</button>
       </div>
     </div>
   </div>
@@ -340,7 +338,7 @@
     const STORAGE_KEY = "crossGameShopProfiles_v1";
     const BARRACUDA_PRICE = 600;
     const POKEBALL_SKIN_PRICE = 50;
-    const RAVEN_PRICE = 100;
+    const PINEAPPLE_PRICE = 300;
 
     function loadAll() {
       try {
@@ -400,7 +398,6 @@
         stockShares: 0,
         stockHistory: [{ time: t, price: 1, change: 0 }],
         barracudaPurchased: false,
-        ravenPurchased: false,
         lastStockTick: t,
       };
     }
@@ -421,7 +418,7 @@
       panelStocks: document.getElementById("panel-stocks"),
       btnBarracuda: document.getElementById("btn-barracuda"),
       btnPokeballSkin: document.getElementById("btn-pokeball-skin"),
-      btnRaven: document.getElementById("btn-raven"),
+      btnPineapple: document.getElementById("btn-pineapple"),
       stockCurrent: document.getElementById("stock-current"),
       stockShares: document.getElementById("stock-shares"),
       stockHistory: document.getElementById("stock-history"),
@@ -436,8 +433,8 @@
       modalBarracudaOk: document.getElementById("modal-barracuda-ok"),
       overlayPokeballSkin: document.getElementById("overlay-pokeball-skin"),
       modalPokeballSkinOk: document.getElementById("modal-pokeball-skin-ok"),
-      overlayRaven: document.getElementById("overlay-raven"),
-      modalRavenOk: document.getElementById("modal-raven-ok"),
+      overlayPineapple: document.getElementById("overlay-pineapple"),
+      modalPineappleOk: document.getElementById("modal-pineapple-ok"),
       overlaySettings: document.getElementById("overlay-settings"),
       btnChangePassOpen: document.getElementById("btn-change-pass-open"),
       btnLogout: document.getElementById("btn-logout"),
@@ -476,7 +473,6 @@
         }
       }
       p.stockHistory = trimHistory(p.stockHistory, 5);
-      if (typeof p.ravenPurchased !== "boolean") p.ravenPurchased = false;
       return p;
     }
 
@@ -602,13 +598,11 @@
       els.btnPokeballSkin.textContent = canPokeball
         ? `花費 ${formatMoney(POKEBALL_SKIN_PRICE)} 購買`
         : `餘額不足（需 ${formatMoney(POKEBALL_SKIN_PRICE)}）`;
-      const ravenDone = p.ravenPurchased === true;
-      const canRaven = !ravenDone && p.balance >= RAVEN_PRICE;
-      els.btnRaven.disabled = !canRaven;
-      if (ravenDone) els.btnRaven.textContent = "已兌換（每帳僅一次）";
-      else if (p.balance < RAVEN_PRICE)
-        els.btnRaven.textContent = `餘額不足（需 ${formatMoney(RAVEN_PRICE)}）`;
-      else els.btnRaven.textContent = `花費 ${formatMoney(RAVEN_PRICE)} 購買`;
+      const canPineapple = p.balance >= PINEAPPLE_PRICE;
+      els.btnPineapple.disabled = !canPineapple;
+      els.btnPineapple.textContent = canPineapple
+        ? `花費 ${formatMoney(PINEAPPLE_PRICE)} 購買`
+        : `餘額不足（需 ${formatMoney(PINEAPPLE_PRICE)}）`;
       const px = p.stockPrice;
       const canBuyShare = p.balance >= px && px > 0;
       if (els.btnBuyStock) {
@@ -708,22 +702,16 @@
       els.overlayPokeballSkin.classList.remove("hidden");
     });
 
-    els.btnRaven.addEventListener("click", () => {
+    els.btnPineapple.addEventListener("click", () => {
       const p = getProfile();
-      if (!p) return;
-      if (p.ravenPurchased) {
-        showModal("無法購買", "Limited addition Raven 每個帳號僅能兌換一次。");
+      if (!p || p.balance < PINEAPPLE_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(PINEAPPLE_PRICE)}。`);
         return;
       }
-      if (p.balance < RAVEN_PRICE) {
-        showModal("無法購買", `餘額不足，需要 ${formatMoney(RAVEN_PRICE)}。`);
-        return;
-      }
-      p.balance = roundMoney(p.balance - RAVEN_PRICE);
-      p.ravenPurchased = true;
+      p.balance = roundMoney(p.balance - PINEAPPLE_PRICE);
       persistProfile(p);
       refreshUI();
-      els.overlayRaven.classList.remove("hidden");
+      els.overlayPineapple.classList.remove("hidden");
     });
 
     els.btnBuyStock.addEventListener("click", () => {
@@ -761,8 +749,8 @@
       els.overlayPokeballSkin.classList.add("hidden");
     });
 
-    els.modalRavenOk.addEventListener("click", () => {
-      els.overlayRaven.classList.add("hidden");
+    els.modalPineappleOk.addEventListener("click", () => {
+      els.overlayPineapple.classList.add("hidden");
     });
 
     els.modalGenericOk.addEventListener("click", () => {
@@ -867,8 +855,8 @@
     document.getElementById("overlay-pokeball-skin").addEventListener("click", (e) => {
       if (e.target.id === "overlay-pokeball-skin") els.overlayPokeballSkin.classList.add("hidden");
     });
-    document.getElementById("overlay-raven").addEventListener("click", (e) => {
-      if (e.target.id === "overlay-raven") els.overlayRaven.classList.add("hidden");
+    document.getElementById("overlay-pineapple").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-pineapple") els.overlayPineapple.classList.add("hidden");
     });
 
     document.addEventListener("visibilitychange", () => {
