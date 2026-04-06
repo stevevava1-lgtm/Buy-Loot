@@ -239,6 +239,11 @@
         <div class="price">$20.00</div>
         <button type="button" class="btn btn-primary" id="btn-fern">花費 $20 購買</button>
       </div>
+      <div class="shop-item" style="margin-top:1rem;">
+        <h3>The Forgotten Overpowered Apple Tree</h3>
+        <div class="price">$1,000,000.00</div>
+        <button type="button" class="btn btn-primary" id="btn-apple-tree">花費 $1,000,000 購買</button>
+      </div>
     </div>
     <div id="panel-stocks" class="card hidden stock-panel" role="tabpanel">
       <h2 style="margin:0; font-size:1rem;">股票模擬</h2>
@@ -311,6 +316,17 @@
     </div>
   </div>
 
+  <div id="overlay-apple-tree" class="overlay hidden">
+    <div class="modal">
+      <h2>購買成功</h2>
+      <p style="margin:0; line-height:1.55; font-size:0.95rem;">claim the code: <span class="highlight" style="color:var(--accent);">H6VY43</span></p>
+      <p class="subtitle" style="margin:0.65rem 0 0; font-size:0.88rem;">請於 <strong>Plants vs Everything</strong> 遊戲內領取／兌換。</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-apple-tree-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
   <div id="overlay-settings" class="overlay hidden">
     <div class="modal">
       <h2>設定</h2>
@@ -356,6 +372,7 @@
     const POKEBALL_SKIN_PRICE = 50;
     const PINEAPPLE_PRICE = 300;
     const FERN_PRICE = 20;
+    const APPLE_TREE_PRICE = 1000000;
 
     function loadAll() {
       try {
@@ -437,6 +454,7 @@
       btnPokeballSkin: document.getElementById("btn-pokeball-skin"),
       btnPineapple: document.getElementById("btn-pineapple"),
       btnFern: document.getElementById("btn-fern"),
+      btnAppleTree: document.getElementById("btn-apple-tree"),
       stockCurrent: document.getElementById("stock-current"),
       stockShares: document.getElementById("stock-shares"),
       stockHistory: document.getElementById("stock-history"),
@@ -455,6 +473,8 @@
       modalPineappleOk: document.getElementById("modal-pineapple-ok"),
       overlayFern: document.getElementById("overlay-fern"),
       modalFernOk: document.getElementById("modal-fern-ok"),
+      overlayAppleTree: document.getElementById("overlay-apple-tree"),
+      modalAppleTreeOk: document.getElementById("modal-apple-tree-ok"),
       overlaySettings: document.getElementById("overlay-settings"),
       btnChangePassOpen: document.getElementById("btn-change-pass-open"),
       btnLogout: document.getElementById("btn-logout"),
@@ -628,6 +648,11 @@
       els.btnFern.textContent = canFern
         ? `花費 ${formatMoney(FERN_PRICE)} 購買`
         : `餘額不足（需 ${formatMoney(FERN_PRICE)}）`;
+      const canAppleTree = p.balance >= APPLE_TREE_PRICE;
+      els.btnAppleTree.disabled = !canAppleTree;
+      els.btnAppleTree.textContent = canAppleTree
+        ? `花費 ${formatMoney(APPLE_TREE_PRICE)} 購買`
+        : `餘額不足（需 ${formatMoney(APPLE_TREE_PRICE)}）`;
       const px = p.stockPrice;
       const canBuyShare = p.balance >= px && px > 0;
       if (els.btnBuyStock) {
@@ -751,6 +776,18 @@
       els.overlayFern.classList.remove("hidden");
     });
 
+    els.btnAppleTree.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p || p.balance < APPLE_TREE_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(APPLE_TREE_PRICE)}。`);
+        return;
+      }
+      p.balance = roundMoney(p.balance - APPLE_TREE_PRICE);
+      persistProfile(p);
+      refreshUI();
+      els.overlayAppleTree.classList.remove("hidden");
+    });
+
     els.btnBuyStock.addEventListener("click", () => {
       const p = getProfile();
       if (!p) return;
@@ -792,6 +829,10 @@
 
     els.modalFernOk.addEventListener("click", () => {
       els.overlayFern.classList.add("hidden");
+    });
+
+    els.modalAppleTreeOk.addEventListener("click", () => {
+      els.overlayAppleTree.classList.add("hidden");
     });
 
     els.modalGenericOk.addEventListener("click", () => {
@@ -901,6 +942,9 @@
     });
     document.getElementById("overlay-fern").addEventListener("click", (e) => {
       if (e.target.id === "overlay-fern") els.overlayFern.classList.add("hidden");
+    });
+    document.getElementById("overlay-apple-tree").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-apple-tree") els.overlayAppleTree.classList.add("hidden");
     });
 
     document.addEventListener("visibilitychange", () => {
