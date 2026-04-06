@@ -234,6 +234,11 @@
         <div class="price">$300.00</div>
         <button type="button" class="btn btn-primary" id="btn-pineapple">花費 $300 購買</button>
       </div>
+      <div class="shop-item" style="margin-top:1rem;">
+        <h3>2x size fern🫢</h3>
+        <div class="price">$20.00</div>
+        <button type="button" class="btn btn-primary" id="btn-fern">花費 $20 購買</button>
+      </div>
     </div>
     <div id="panel-stocks" class="card hidden stock-panel" role="tabpanel">
       <h2 style="margin:0; font-size:1rem;">股票模擬</h2>
@@ -295,6 +300,17 @@
     </div>
   </div>
 
+  <div id="overlay-fern" class="overlay hidden">
+    <div class="modal">
+      <h2>購買成功</h2>
+      <p style="margin:0; line-height:1.55; font-size:0.95rem;">Redeem the code: <span class="highlight" style="color:var(--accent);">B154ERN</span>.</p>
+      <p class="subtitle" style="margin:0.65rem 0 0; font-size:0.88rem;">請於 <strong>Plants vs Everything</strong> 遊戲內完成兌換。</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-fern-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
   <div id="overlay-settings" class="overlay hidden">
     <div class="modal">
       <h2>設定</h2>
@@ -339,6 +355,7 @@
     const BARRACUDA_PRICE = 600;
     const POKEBALL_SKIN_PRICE = 50;
     const PINEAPPLE_PRICE = 300;
+    const FERN_PRICE = 20;
 
     function loadAll() {
       try {
@@ -419,6 +436,7 @@
       btnBarracuda: document.getElementById("btn-barracuda"),
       btnPokeballSkin: document.getElementById("btn-pokeball-skin"),
       btnPineapple: document.getElementById("btn-pineapple"),
+      btnFern: document.getElementById("btn-fern"),
       stockCurrent: document.getElementById("stock-current"),
       stockShares: document.getElementById("stock-shares"),
       stockHistory: document.getElementById("stock-history"),
@@ -435,6 +453,8 @@
       modalPokeballSkinOk: document.getElementById("modal-pokeball-skin-ok"),
       overlayPineapple: document.getElementById("overlay-pineapple"),
       modalPineappleOk: document.getElementById("modal-pineapple-ok"),
+      overlayFern: document.getElementById("overlay-fern"),
+      modalFernOk: document.getElementById("modal-fern-ok"),
       overlaySettings: document.getElementById("overlay-settings"),
       btnChangePassOpen: document.getElementById("btn-change-pass-open"),
       btnLogout: document.getElementById("btn-logout"),
@@ -603,6 +623,11 @@
       els.btnPineapple.textContent = canPineapple
         ? `花費 ${formatMoney(PINEAPPLE_PRICE)} 購買`
         : `餘額不足（需 ${formatMoney(PINEAPPLE_PRICE)}）`;
+      const canFern = p.balance >= FERN_PRICE;
+      els.btnFern.disabled = !canFern;
+      els.btnFern.textContent = canFern
+        ? `花費 ${formatMoney(FERN_PRICE)} 購買`
+        : `餘額不足（需 ${formatMoney(FERN_PRICE)}）`;
       const px = p.stockPrice;
       const canBuyShare = p.balance >= px && px > 0;
       if (els.btnBuyStock) {
@@ -714,6 +739,18 @@
       els.overlayPineapple.classList.remove("hidden");
     });
 
+    els.btnFern.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p || p.balance < FERN_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(FERN_PRICE)}。`);
+        return;
+      }
+      p.balance = roundMoney(p.balance - FERN_PRICE);
+      persistProfile(p);
+      refreshUI();
+      els.overlayFern.classList.remove("hidden");
+    });
+
     els.btnBuyStock.addEventListener("click", () => {
       const p = getProfile();
       if (!p) return;
@@ -751,6 +788,10 @@
 
     els.modalPineappleOk.addEventListener("click", () => {
       els.overlayPineapple.classList.add("hidden");
+    });
+
+    els.modalFernOk.addEventListener("click", () => {
+      els.overlayFern.classList.add("hidden");
     });
 
     els.modalGenericOk.addEventListener("click", () => {
@@ -857,6 +898,9 @@
     });
     document.getElementById("overlay-pineapple").addEventListener("click", (e) => {
       if (e.target.id === "overlay-pineapple") els.overlayPineapple.classList.add("hidden");
+    });
+    document.getElementById("overlay-fern").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-fern") els.overlayFern.classList.add("hidden");
     });
 
     document.addEventListener("visibilitychange", () => {
