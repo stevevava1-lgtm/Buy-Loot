@@ -211,6 +211,7 @@
     <div class="tabs" role="tablist">
       <button type="button" class="tab active" data-tab="fishing" role="tab">Fishing World</button>
       <button type="button" class="tab" data-tab="pve" role="tab">Plants vs Everything</button>
+      <button type="button" class="tab" data-tab="boss" role="tab">Boss Battles</button>
       <button type="button" class="tab" data-tab="stocks" role="tab">Stocks</button>
     </div>
     <div id="panel-fishing" class="card" role="tabpanel">
@@ -257,6 +258,15 @@
       <h3 style="margin:0 0 0.35rem; font-size:0.9rem; color:var(--muted);">最近 5 分鐘：價格與每次漲跌</h3>
       <p class="subtitle" style="margin-top:0; font-size:0.8rem;">下列為每分鐘收盤價，以及相對於<strong>上一分鐘</strong>的變化（Δ）。</p>
       <ul class="history" id="stock-history" aria-label="股價與漲跌紀錄"></ul>
+    </div>
+    <div id="panel-boss" class="card hidden" role="tabpanel">
+      <h2 style="margin:0 0 1rem; font-size:1rem;">Boss Battles（活動）</h2>
+      <div class="shop-item">
+        <h3>Release crate codes</h3>
+        <p class="subtitle" style="margin:0 0 0.5rem; font-size:0.82rem; line-height:1.45; color:var(--warning);">活動商品：每次購買只會顯示 1 組代碼；同一帳號不會重複，抽完即售罄。</p>
+        <div class="price">$200.00</div>
+        <button type="button" class="btn btn-primary" id="btn-boss-event">花費 $200 購買</button>
+      </div>
     </div>
   </div>
 
@@ -327,6 +337,17 @@
     </div>
   </div>
 
+  <div id="overlay-boss-event" class="overlay hidden">
+    <div class="modal">
+      <h2>活動代碼</h2>
+      <p>本次抽到的代碼（同帳號不重複）：</p>
+      <p class="highlight" style="color:var(--accent);" id="boss-event-code"></p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="modal-boss-event-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
   <div id="overlay-settings" class="overlay hidden">
     <div class="modal">
       <h2>設定</h2>
@@ -373,6 +394,8 @@
     const PINEAPPLE_PRICE = 300;
     const FERN_PRICE = 20;
     const APPLE_TREE_PRICE = 1000000;
+    const BOSS_EVENT_PRICE = 200;
+    const BOSS_EVENT_CODES = ["b03", "Lhyu", "Relese!", "z00ms4hur", "uracat", "april9th"];
 
     function loadAll() {
       try {
@@ -432,6 +455,7 @@
         stockShares: 0,
         stockHistory: [{ time: t, price: 1, change: 0 }],
         barracudaPurchased: false,
+        bossEventCodesRemaining: [...BOSS_EVENT_CODES],
         lastStockTick: t,
       };
     }
@@ -449,12 +473,14 @@
       tabs: document.querySelectorAll(".tab"),
       panelFishing: document.getElementById("panel-fishing"),
       panelPve: document.getElementById("panel-pve"),
+      panelBoss: document.getElementById("panel-boss"),
       panelStocks: document.getElementById("panel-stocks"),
       btnBarracuda: document.getElementById("btn-barracuda"),
       btnPokeballSkin: document.getElementById("btn-pokeball-skin"),
       btnPineapple: document.getElementById("btn-pineapple"),
       btnFern: document.getElementById("btn-fern"),
       btnAppleTree: document.getElementById("btn-apple-tree"),
+      btnBossEvent: document.getElementById("btn-boss-event"),
       stockCurrent: document.getElementById("stock-current"),
       stockShares: document.getElementById("stock-shares"),
       stockHistory: document.getElementById("stock-history"),
@@ -475,6 +501,9 @@
       modalFernOk: document.getElementById("modal-fern-ok"),
       overlayAppleTree: document.getElementById("overlay-apple-tree"),
       modalAppleTreeOk: document.getElementById("modal-apple-tree-ok"),
+      overlayBossEvent: document.getElementById("overlay-boss-event"),
+      modalBossEventOk: document.getElementById("modal-boss-event-ok"),
+      bossEventCode: document.getElementById("boss-event-code"),
       overlaySettings: document.getElementById("overlay-settings"),
       btnChangePassOpen: document.getElementById("btn-change-pass-open"),
       btnLogout: document.getElementById("btn-logout"),
@@ -502,6 +531,8 @@
       if (typeof p.stockShares !== "number" || isNaN(p.stockShares) || p.stockShares < 0) p.stockShares = 0;
       p.stockShares = Math.max(0, Math.floor(p.stockShares));
       if (!p.lastStockTick) p.lastStockTick = nowIso();
+      if (!Array.isArray(p.bossEventCodesRemaining)) p.bossEventCodesRemaining = [...BOSS_EVENT_CODES];
+      p.bossEventCodesRemaining = p.bossEventCodesRemaining.filter((c) => BOSS_EVENT_CODES.includes(c));
       if (!Array.isArray(p.stockHistory) || p.stockHistory.length === 0) {
         p.stockHistory = [{ time: p.lastStockTick || nowIso(), price: p.stockPrice, change: 0 }];
       }
@@ -653,6 +684,12 @@
       els.btnAppleTree.textContent = canAppleTree
         ? `花費 ${formatMoney(APPLE_TREE_PRICE)} 購買`
         : `餘額不足（需 ${formatMoney(APPLE_TREE_PRICE)}）`;
+      const bossLeft = Array.isArray(p.bossEventCodesRemaining) ? p.bossEventCodesRemaining.length : 0;
+      const canBoss = bossLeft > 0 && p.balance >= BOSS_EVENT_PRICE;
+      els.btnBossEvent.disabled = !canBoss;
+      if (bossLeft <= 0) els.btnBossEvent.textContent = "活動已售罄";
+      else if (p.balance < BOSS_EVENT_PRICE) els.btnBossEvent.textContent = `餘額不足（需 ${formatMoney(BOSS_EVENT_PRICE)}）`;
+      else els.btnBossEvent.textContent = `花費 ${formatMoney(BOSS_EVENT_PRICE)} 購買（剩 ${bossLeft}）`;
       const px = p.stockPrice;
       const canBuyShare = p.balance >= px && px > 0;
       if (els.btnBuyStock) {
@@ -689,6 +726,7 @@
       els.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === id));
       els.panelFishing.classList.toggle("hidden", id !== "fishing");
       els.panelPve.classList.toggle("hidden", id !== "pve");
+      els.panelBoss.classList.toggle("hidden", id !== "boss");
       els.panelStocks.classList.toggle("hidden", id !== "stocks");
     }
 
@@ -788,6 +826,28 @@
       els.overlayAppleTree.classList.remove("hidden");
     });
 
+    els.btnBossEvent.addEventListener("click", () => {
+      const p = getProfile();
+      if (!p) return;
+      const left = Array.isArray(p.bossEventCodesRemaining) ? p.bossEventCodesRemaining : [];
+      if (left.length <= 0) {
+        showModal("無法購買", "此活動已售罄（本帳號所有代碼都已抽過）。");
+        return;
+      }
+      if (p.balance < BOSS_EVENT_PRICE) {
+        showModal("無法購買", `餘額不足，需要 ${formatMoney(BOSS_EVENT_PRICE)}。`);
+        return;
+      }
+      const idx = Math.floor(Math.random() * left.length);
+      const code = left[idx];
+      p.bossEventCodesRemaining = left.filter((_, i) => i !== idx);
+      p.balance = roundMoney(p.balance - BOSS_EVENT_PRICE);
+      persistProfile(p);
+      refreshUI();
+      els.bossEventCode.textContent = code;
+      els.overlayBossEvent.classList.remove("hidden");
+    });
+
     els.btnBuyStock.addEventListener("click", () => {
       const p = getProfile();
       if (!p) return;
@@ -833,6 +893,10 @@
 
     els.modalAppleTreeOk.addEventListener("click", () => {
       els.overlayAppleTree.classList.add("hidden");
+    });
+
+    els.modalBossEventOk.addEventListener("click", () => {
+      els.overlayBossEvent.classList.add("hidden");
     });
 
     els.modalGenericOk.addEventListener("click", () => {
@@ -945,6 +1009,9 @@
     });
     document.getElementById("overlay-apple-tree").addEventListener("click", (e) => {
       if (e.target.id === "overlay-apple-tree") els.overlayAppleTree.classList.add("hidden");
+    });
+    document.getElementById("overlay-boss-event").addEventListener("click", (e) => {
+      if (e.target.id === "overlay-boss-event") els.overlayBossEvent.classList.add("hidden");
     });
 
     document.addEventListener("visibilitychange", () => {
