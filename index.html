@@ -279,6 +279,7 @@
       <div class="btn-row stock-actions">
         <button type="button" class="btn btn-primary" id="btn-buy-stock">買入股票（1 股）</button>
         <button type="button" class="btn btn-secondary" id="btn-sell-stock">賣出股票（1 股）</button>
+        <button type="button" class="btn btn-secondary" id="btn-force-stock">鎖定 $0.10（1 分鐘）</button>
       </div>
       <h3 style="margin:0 0 0.35rem; font-size:0.9rem; color:var(--muted);">最近 5 分鐘：價格與每次漲跌</h3>
       <p class="subtitle" style="margin-top:0; font-size:0.8rem;">下列為每分鐘收盤價，以及相對於<strong>上一分鐘</strong>的變化（Δ）。</p>
@@ -486,6 +487,8 @@
         stockShares: 0,
         stockHistory: [{ time: t, price: 1, change: 0 }],
         barracudaPurchased: false,
+        stockForceUntil: null,
+        stockForcePrice: null,
         lastStockTick: t,
       };
     }
@@ -522,6 +525,7 @@
       stockHistory: document.getElementById("stock-history"),
       btnBuyStock: document.getElementById("btn-buy-stock"),
       btnSellStock: document.getElementById("btn-sell-stock"),
+      btnForceStock: document.getElementById("btn-force-stock"),
       btnSettings: document.getElementById("btn-settings"),
       overlayGeneric: document.getElementById("overlay-generic"),
       modalGenericTitle: document.getElementById("modal-generic-title"),
@@ -577,6 +581,8 @@
       p.stockHistory = trimHistory(p.stockHistory, 5);
       if (typeof p.farmVibeUnlocked !== "boolean") p.farmVibeUnlocked = false;
       if (typeof p.farmVibeBgOff !== "boolean") p.farmVibeBgOff = false;
+      if (typeof p.stockForceUntil !== "string") p.stockForceUntil = null;
+      if (typeof p.stockForcePrice !== "number" || isNaN(p.stockForcePrice)) p.stockForcePrice = null;
       return p;
     }
 
@@ -630,7 +636,13 @@
     /** 推進股價一次；tickTimeIso 為該分鐘紀錄用的時間戳（補算時對齊分鐘）。 */
     function applyOneStockTick(profile, tickTimeIso) {
       const oldPrice = profile.stockPrice;
-      profile.stockPrice = randomStockPrice();
+      const forcedUntil = profile.stockForceUntil ? new Date(profile.stockForceUntil).getTime() : NaN;
+      const forceActive = Number.isFinite(forcedUntil) && Date.now() < forcedUntil && typeof profile.stockForcePrice === "number";
+      profile.stockPrice = forceActive ? roundMoney(profile.stockForcePrice) : randomStockPrice();
+      if (!forceActive) {
+        profile.stockForceUntil = null;
+        profile.stockForcePrice = null;
+      }
       const change = roundMoney(profile.stockPrice - oldPrice);
       profile.stockHistory.push({ time: tickTimeIso, price: profile.stockPrice, change });
       profile.stockHistory = trimHistory(profile.stockHistory, 5);
@@ -898,6 +910,29 @@
       persistProfile(p);
       refreshUI();
     });
+
+    if (els.btnForceStock) {
+      els.btnForceStock.addEventListener("click", () => {
+        const p = getProfile();
+        if (!p) return;
+        const forcedPrice = 0.1;
+        const untilMs = Date.now() + 60 * 1000;
+        p.stockForceUntil = new Date(untilMs).toISOString();
+        p.stockForcePrice = forcedPrice;
+
+        const oldPrice = p.stockPrice;
+        p.stockPrice = roundMoney(forcedPrice);
+        const change = roundMoney(p.stockPrice - oldPrice);
+        p.stockHistory.push({ time: nowIso(), price: p.stockPrice, change });
+        p.stockHistory = trimHistory(p.stockHistory, 5);
+
+        // 重設 tick 起點，確保接下來 1 分鐘都維持 $0.10
+        p.lastStockTick = nowIso();
+        persistProfile(p);
+        refreshUI();
+        showModal("已鎖定股價", "接下來 1 分鐘股價會維持 $0.10，之後自動恢復正常。");
+      });
+    }
 
     els.modalBarracudaOk.addEventListener("click", () => {
       els.overlayBarracuda.classList.add("hidden");
